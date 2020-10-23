@@ -1,7 +1,6 @@
 package com.ticticboooom.twerkitmeal;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.SaplingBlock;
+import net.minecraft.block.*;
 import net.minecraft.item.BoneMealItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -46,8 +45,10 @@ public class TwerkItMeal {
                     BlockPos pos = new BlockPos(sapling.getX(), sapling.getY(), sapling.getZ());
 
                     BoneMealItem.applyBonemeal(new ItemStack(Items.BONE_MEAL), event.player.world, pos, event.player);
-                    event.player.world.addParticle(ParticleTypes.HAPPY_VILLAGER, pos.getX() + event.player.world.rand.nextDouble(), pos.getY() + event.player.world.rand.nextDouble(),
-                            pos.getZ() + event.player.world.rand.nextDouble(), 0f, 0f, 0f);
+                    for (int i = 0; i < 5; i++) {
+                        event.player.world.addParticle(ParticleTypes.HAPPY_VILLAGER, pos.getX() + event.player.world.rand.nextDouble(), pos.getY() + event.player.world.rand.nextDouble(),
+                                pos.getZ() + event.player.world.rand.nextDouble(), 0f, 0f, 0f);
+                    }
                 }
                 ticksSinceLastCheck = 0;
             }
@@ -60,7 +61,7 @@ public class TwerkItMeal {
                 for (int y = -2; y <= 2; y++)
                     for (int z = -5; z <= 5; z++) {
                         Block block = world.getBlockState(new BlockPos(x + pos.getX(), y + pos.getY(), z + pos.getZ())).getBlock();
-                        if (block instanceof SaplingBlock)
+                        if (block instanceof IGrowable && !(block instanceof GrassBlock || block instanceof TallGrassBlock))
                             list.add(new BlockPos(x + pos.getX(), y + pos.getY(), z + pos.getZ()));
                     }
             return list;
