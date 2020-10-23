@@ -1,14 +1,18 @@
 package com.ticticboooom.twerkitmeal;
 
+import com.ticticboooom.twerkitmeal.net.PacketHandler;
+import com.ticticboooom.twerkitmeal.net.packet.BonemealPacket;
 import net.minecraft.block.*;
 import net.minecraft.item.BoneMealItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.particles.ParticleTypes;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.BonemealEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -26,6 +30,7 @@ public class TwerkItMeal {
     public static final String MOD_ID = "twerkitmeal";
 
     public TwerkItMeal() {
+        PacketHandler.register();
         MinecraftForge.EVENT_BUS.register(new RegistryEvents());
     }
 
@@ -33,24 +38,24 @@ public class TwerkItMeal {
     public static class RegistryEvents {
 
         public int ticksSinceLastCheck = 0;
+        private boolean allowNextBonemeal = true;
 
         @SubscribeEvent
         public void onTwerk(TickEvent.PlayerTickEvent event) {
             if (!event.player.isSneaking()) {
+                allowNextBonemeal = true;
                 return;
             }
-            if (ticksSinceLastCheck >= 10) {
+            if (ticksSinceLastCheck >= 10 && allowNextBonemeal) {
                 List<BlockPos> saplings = getNearestBlocks(event.player.world, event.player.getPosition());
                 for (BlockPos sapling : saplings) {
                     BlockPos pos = new BlockPos(sapling.getX(), sapling.getY(), sapling.getZ());
 
-                    BoneMealItem.applyBonemeal(new ItemStack(Items.BONE_MEAL), event.player.world, pos, event.player);
-                    for (int i = 0; i < 5; i++) {
-                        event.player.world.addParticle(ParticleTypes.HAPPY_VILLAGER, pos.getX() + event.player.world.rand.nextDouble(), pos.getY() + event.player.world.rand.nextDouble(),
-                                pos.getZ() + event.player.world.rand.nextDouble(), 0f, 0f, 0f);
-                    }
+
+                    PacketHandler.sendToServer(new BonemealPacket(createCompoundTag(pos)));
                 }
                 ticksSinceLastCheck = 0;
+                allowNextBonemeal = false;
             }
             ticksSinceLastCheck++;
         }
@@ -65,6 +70,13 @@ public class TwerkItMeal {
                             list.add(new BlockPos(x + pos.getX(), y + pos.getY(), z + pos.getZ()));
                     }
             return list;
+        }
+        private CompoundNBT createCompoundTag(BlockPos pos) {
+            CompoundNBT nbt = new CompoundNBT();
+            nbt.putInt("x",  pos.getX());
+            nbt.putInt("y",  pos.getY());
+            nbt.putInt("z",  pos.getZ());
+            return nbt;
         }
     }
 }
