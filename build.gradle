@@ -98,11 +98,12 @@ dependencies {
     // that the dep is a ForgeGradle 'patcher' dependency. And it's patches will be applied.
     // The userdev artifact is a special name and will get all sorts of transformations applied to it.
     minecraft 'net.minecraftforge:forge:1.16.3-34.1.0'
-    implementation fg.deobf('curse.maven:mystical-agriculture:3060160')
-    implementation fg.deobf('curse.maven:cucumber:3060156')
     // You may put jars on which you depend on in ./libs or you may define them like so..
     // compile "some.group:artifact:version:classifier"
     // compile "some.group:artifact:version"
+    compileOnly fg.deobf('curse.maven:mystical-agriculture:3060160')
+    compileOnly fg.deobf('curse.maven:cucumber:3060156')
+
 
     // Real examples
     // compile 'com.mod-buildcraft:buildcraft:6.0.8:dev'  // adds buildcraft to the dev env

@@ -1,6 +1,8 @@
 package com.ticticboooom.twerkitmeal;
 
 import com.ticticboooom.twerkitmeal.config.CommonConfig;
+import com.ticticboooom.twerkitmeal.config.TwerkConfig;
+import com.ticticboooom.twerkitmeal.helper.FilterListHelper;
 import com.ticticboooom.twerkitmeal.net.PacketHandler;
 import com.ticticboooom.twerkitmeal.net.packet.BonemealPacket;
 import net.minecraft.block.*;
@@ -35,8 +37,8 @@ public class TwerkItMeal {
 
     public TwerkItMeal() {
         PacketHandler.register();
+        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, commonSpec, "twerk-config.toml");
         MinecraftForge.EVENT_BUS.register(new RegistryEvents());
-        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, commonSpec);
     }
 
 
@@ -56,8 +58,6 @@ public class TwerkItMeal {
                 List<BlockPos> saplings = getNearestBlocks(event.player.world, event.player.getPosition());
                 for (BlockPos sapling : saplings) {
                     BlockPos pos = new BlockPos(sapling.getX(), sapling.getY(), sapling.getZ());
-
-
                     PacketHandler.sendToServer(new BonemealPacket(createCompoundTag(pos)));
                 }
                 ticksSinceLastCheck = 0;
@@ -72,14 +72,8 @@ public class TwerkItMeal {
                 for (int y = -2; y <= 2; y++)
                     for (int z = -5; z <= 5; z++) {
                         Block block = world.getBlockState(new BlockPos(x + pos.getX(), y + pos.getY(), z + pos.getZ())).getBlock();
-                        if (block instanceof IGrowable && !(block instanceof GrassBlock || block instanceof TallGrassBlock)) {
-                            if (!COMMON_CONFIG.blackList.get().contains(block.getRegistryName())) {
-                                if (COMMON_CONFIG.useWhitelist.get() && !COMMON_CONFIG.whitelist.get().contains(block.getRegistryName())) {
-                                    continue;
-                                }
-                                if (block.getRegistryName().toString().contains("botanypots")) {
-                                    continue;
-                                }
+                        if (block instanceof IGrowable) {
+                            if (FilterListHelper.shouldAllow(block.getRegistryName().toString())) {
                                 list.add(new BlockPos(x + pos.getX(), y + pos.getY(), z + pos.getZ()));
                             }
                         }
