@@ -33,7 +33,7 @@ public class CommonConfig {
                 .define("blacklist", defaultBlackList);
         whitelist = builder.comment("growables to enable crouching on (only works if 'useWhiteList' is true and will give exclisivity to those growables) ")
                 .define("whitelist", new ArrayList<>());
-        minCrouchesToApplyBonemeal = builder.comment("[ > 0] the minimum number of crouches before the bonemeal is applied (bonemeal is applied randomly so this will not be exact)")
+        minCrouchesToApplyBonemeal = builder.comment("the minimum number of crouches before the bonemeal is applied (bonemeal is applied randomly so this will not be exact)")
                 .defineInRange("minCrouchesToApplyBonemeal", 5, 0, Integer.MAX_VALUE);
     }
 }

@@ -15,7 +15,7 @@ public class FilterListHelper {
         // entire block RL
         variations.add(key);
         // mod id from RL of block
-        variations.add(key.substring(0, key.indexOf(":") - 1));
+        variations.add(key.substring(0, key.indexOf(":")));
         for (String listed : TwerkConfig.blackList) {
             if (variations.contains(listed)) {
                 return false;

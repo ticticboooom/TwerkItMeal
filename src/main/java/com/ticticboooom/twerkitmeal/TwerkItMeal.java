@@ -20,6 +20,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 
 @Mod(TwerkItMeal.MOD_ID)
@@ -54,7 +55,7 @@ public class TwerkItMeal {
                 allowNextBonemeal = true;
                 return;
             }
-            if (ticksSinceLastCheck >= 10 && allowNextBonemeal) {
+            if (ticksSinceLastCheck >= TwerkConfig.minCrouchesToApplyBonemeal && allowNextBonemeal && event.player.world.getRandom().nextDouble() <= 0.5) {
                 List<BlockPos> saplings = getNearestBlocks(event.player.world, event.player.getPosition());
                 for (BlockPos sapling : saplings) {
                     BlockPos pos = new BlockPos(sapling.getX(), sapling.getY(), sapling.getZ());
