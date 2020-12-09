@@ -3,12 +3,17 @@ package com.ticticboooom.twerkitmeal;
 import com.ticticboooom.twerkitmeal.config.CommonConfig;
 import com.ticticboooom.twerkitmeal.config.TwerkConfig;
 import com.ticticboooom.twerkitmeal.helper.FilterListHelper;
-import com.ticticboooom.twerkitmeal.net.PacketHandler;
-import com.ticticboooom.twerkitmeal.net.packet.BonemealPacket;
 import net.minecraft.block.*;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.item.BoneMealItem;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.particles.ParticleTypes;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
@@ -18,9 +23,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import org.apache.commons.lang3.tuple.Pair;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 
 @Mod(TwerkItMeal.MOD_ID)
@@ -37,7 +40,6 @@ public class TwerkItMeal {
     }
 
     public TwerkItMeal() {
-        PacketHandler.register();
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, commonSpec, "twerk-config.toml");
         MinecraftForge.EVENT_BUS.register(new RegistryEvents());
     }
@@ -46,25 +48,52 @@ public class TwerkItMeal {
     @Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD)
     public static class RegistryEvents {
 
-        public int ticksSinceLastCheck = 0;
-        private boolean allowNextBonemeal = true;
+        private final Map<UUID, Integer> crouchCount = new HashMap<>();
+        private final Map<UUID, Boolean> prevSneaking = new HashMap<>();
 
         @SubscribeEvent
         public void onTwerk(TickEvent.PlayerTickEvent event) {
-            if (!event.player.isSneaking()) {
-                allowNextBonemeal = true;
+            if (event.player.world.isRemote) {
                 return;
             }
-            if (ticksSinceLastCheck >= TwerkConfig.minCrouchesToApplyBonemeal && allowNextBonemeal && event.player.world.getRandom().nextDouble() <= 0.5) {
-                List<BlockPos> saplings = getNearestBlocks(event.player.world, event.player.getPosition());
-                for (BlockPos sapling : saplings) {
-                    BlockPos pos = new BlockPos(sapling.getX(), sapling.getY(), sapling.getZ());
-                    PacketHandler.sendToServer(new BonemealPacket(createCompoundTag(pos)));
-                }
-                ticksSinceLastCheck = 0;
-                allowNextBonemeal = false;
+            UUID uuid = PlayerEntity.getUUID(event.player.getGameProfile());
+            if (!crouchCount.containsKey(uuid)){
+                crouchCount.put(uuid, 0);
+                prevSneaking.put(uuid, event.player.isSneaking());
             }
-            ticksSinceLastCheck++;
+
+            boolean wasPlayerSneaking = prevSneaking.get(uuid);
+            int playerCrouchCount = crouchCount.get(uuid);
+            if (!event.player.isSneaking()) {
+                prevSneaking.put(uuid, false);
+                return;
+            }
+            if (wasPlayerSneaking && event.player.isSneaking()) {
+                return;
+            } else if (!wasPlayerSneaking && event.player.isSneaking()) {
+                prevSneaking.put(uuid, true);
+                crouchCount.put(uuid, ++playerCrouchCount);
+            }
+
+            ServerWorld world = (ServerWorld) event.player.world;
+            ServerPlayerEntity player = (ServerPlayerEntity) event.player;
+            if (playerCrouchCount >= TwerkConfig.minCrouchesToApplyBonemeal && world.getRandom().nextDouble() <= 0.5) {
+                crouchCount.put(uuid, 0);
+                List<BlockPos> growables = getNearestBlocks(world, player.getPosition());
+                for (BlockPos growablePos : growables) {
+                    BlockState blockState = world.getBlockState(growablePos);
+                    if (!FilterListHelper.shouldAllow(blockState.getBlock().getRegistryName().toString())) {
+                        continue;
+                    }
+                    if (blockState.hasProperty(CropsBlock.AGE)) {
+                        int growth = blockState.get(CropsBlock.AGE);
+                        world.setBlockState(growablePos, blockState.with(CropsBlock.AGE, growth < 7 ? growth + 1 : 7));
+                    } else if (blockState.getBlock() instanceof IGrowable) {
+                        BoneMealItem.applyBonemeal(new ItemStack(Items.BONE_MEAL), world, growablePos, player);
+                    }
+                    world.spawnParticle(player, ParticleTypes.HAPPY_VILLAGER, false, growablePos.getX() + world.rand.nextDouble(), growablePos.getY() + world.rand.nextDouble(), growablePos.getZ() + world.rand.nextDouble(), 10, 0, 0, 0, 3);
+                }
+            }
         }
 
         private List<BlockPos> getNearestBlocks(World world, BlockPos pos) {

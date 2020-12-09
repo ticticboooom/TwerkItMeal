@@ -24,6 +24,7 @@ public class CommonConfig {
         defaultBlackList.add("minecraft:grass_block");
         defaultBlackList.add("minecraft:warped_nylium");
         defaultBlackList.add("minecraft:crimson_nylium");
+        defaultBlackList.add("minecraft:tall_grass");
         defaultBlackList.add("botanypots");
         showParticles = builder.comment("Whether to show particles or not when crouching to grow things")
                 .define("showParticles", true);
