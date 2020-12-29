@@ -26,6 +26,7 @@ public class CommonConfig {
         defaultBlackList.add("minecraft:crimson_nylium");
         defaultBlackList.add("minecraft:tall_grass");
         defaultBlackList.add("botanypots");
+        defaultBlackList.add("gaiadimension");
         showParticles = builder.comment("Whether to show particles or not when crouching to grow things")
                 .define("showParticles", true);
         useWhitelist = builder.comment("whether to enable the whitelist this does not disable the blacklist")
