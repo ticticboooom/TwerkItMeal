@@ -12,6 +12,10 @@ public class TwerkConfig {
     public static List<String> blackList;
     public static List<String> whitelist;
     public static int minCrouchesToApplyBonemeal;
+    public static int effectRadius;
+    public static boolean saplingsOnly;
+    public static int distanceSprintedToGrow;
+    public static double sprintGrowChance;
 
     public static void bake(ModConfig config) {
         showParticles = TwerkItMeal.COMMON_CONFIG.showParticles.get();
@@ -19,5 +23,8 @@ public class TwerkConfig {
         blackList = TwerkItMeal.COMMON_CONFIG.blackList.get();
         whitelist = TwerkItMeal.COMMON_CONFIG.whitelist.get();
         minCrouchesToApplyBonemeal = TwerkItMeal.COMMON_CONFIG.minCrouchesToApplyBonemeal.get();
+        effectRadius = TwerkItMeal.COMMON_CONFIG.effectRadius.get();
+        saplingsOnly = TwerkItMeal.COMMON_CONFIG.saplingsOnly.get();
+        sprintGrowChance = TwerkItMeal.COMMON_CONFIG.sprintGrowChance.get();
     }
 }
