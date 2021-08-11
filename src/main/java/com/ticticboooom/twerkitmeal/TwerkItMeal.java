@@ -1,8 +1,8 @@
 package com.ticticboooom.twerkitmeal;
 
-import com.sun.corba.se.spi.activation.Server;
 import com.ticticboooom.twerkitmeal.config.CommonConfig;
 import com.ticticboooom.twerkitmeal.config.TwerkConfig;
+import com.ticticboooom.twerkitmeal.dynamictrees.DTProxy;
 import com.ticticboooom.twerkitmeal.helper.FilterListHelper;
 import net.minecraft.block.*;
 import net.minecraft.entity.player.PlayerEntity;
@@ -94,6 +94,7 @@ public class TwerkItMeal {
         private void triggerGrowth(TickEvent.PlayerTickEvent event, UUID uuid) {
             crouchCount.put(uuid, 0);
             List<BlockPos> growables = getNearestBlocks(event.player.world, event.player.getPosition());
+            Set<BlockPos> grownDT = new HashSet<>();
             for (BlockPos growablePos : growables) {
                 BlockState blockState = event.player.world.getBlockState(growablePos);
                 if (!FilterListHelper.shouldAllow(blockState.getBlock().getRegistryName().toString())) {
@@ -110,6 +111,8 @@ public class TwerkItMeal {
                     event.player.world.setBlockState(growablePos, blockState.with(CropsBlock.AGE, growth < 7 ? growth + 1 : 7));
                 } else if (blockState.getBlock() instanceof IGrowable) {
                     BoneMealItem.applyBonemeal(new ItemStack(Items.BONE_MEAL), event.player.world, growablePos, event.player);
+                } else if (DTProxy.getProxy().blockAllowed(blockState.getBlock())) {
+                    DTProxy.getProxy().grow(event.player.world, growablePos, grownDT);
                 }
                 ((ServerWorld)event.player.world).spawnParticle((ServerPlayerEntity) event.player, ParticleTypes.HAPPY_VILLAGER, false, growablePos.getX() + event.player.world.rand.nextDouble(), growablePos.getY() + event.player.world.rand.nextDouble(), growablePos.getZ() + event.player.world.rand.nextDouble(), 10, 0, 0, 0, 3);
             }
@@ -121,7 +124,7 @@ public class TwerkItMeal {
                 for (int y = -2; y <= 2; y++)
                     for (int z = -TwerkConfig.effectRadius; z <= TwerkConfig.effectRadius; z++) {
                         Block block = world.getBlockState(new BlockPos(x + pos.getX(), y + pos.getY(), z + pos.getZ())).getBlock();
-                        if (block instanceof IGrowable) {
+                        if (block instanceof IGrowable || DTProxy.getProxy().blockAllowed(block)) {
                             if (FilterListHelper.shouldAllow(block.getRegistryName().toString())) {
                                 list.add(new BlockPos(x + pos.getX(), y + pos.getY(), z + pos.getZ()));
                             }
