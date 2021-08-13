@@ -11,7 +11,20 @@ buildscript {
 
 repositories {
     maven {
-        url = "https://www.cursemaven.com"
+        name 'LDTTeam - Modding'
+        url 'https://ldtteam.jfrog.io/ldtteam/modding/'
+    }
+    maven {
+        url "https://maven.tehnut.info"
+    }
+    maven {
+        url "https://www.cursemaven.com"
+    }
+    maven {
+        url "https://harleyoconnor.com/maven"
+    }
+    maven {
+        url "https://squiddev.cc/maven/"
     }
 }
 
@@ -101,8 +114,9 @@ dependencies {
     // You may put jars on which you depend on in ./libs or you may define them like so..
     // compile "some.group:artifact:version:classifier"
     // compile "some.group:artifact:version"
-    compileOnly fg.deobf('curse.maven:mystical-agriculture:3060160')
-    compileOnly fg.deobf('curse.maven:cucumber:3060156')
+
+
+    compileOnly fg.deobf("com.ferreusveritas.dynamictrees:DynamicTrees-1.16.5:0.10.0-Beta21")
 
 
     // Real examples
