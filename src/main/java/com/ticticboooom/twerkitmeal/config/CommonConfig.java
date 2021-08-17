@@ -1,15 +1,9 @@
 package com.ticticboooom.twerkitmeal.config;
 
-import com.google.common.collect.ImmutableList;
 import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.ForgeRegistryEntry;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class CommonConfig {
     public final ForgeConfigSpec.BooleanValue showParticles;
@@ -20,6 +14,7 @@ public class CommonConfig {
     public final ForgeConfigSpec.IntValue effectRadius;
     public final ForgeConfigSpec.BooleanValue saplingsOnly;
     public final ForgeConfigSpec.DoubleValue sprintGrowChance;
+    public final ForgeConfigSpec.DoubleValue crouchGrowChance;
 
     public CommonConfig(ForgeConfigSpec.Builder builder) {
         List<String> defaultBlackList = new ArrayList<>();
@@ -47,6 +42,7 @@ public class CommonConfig {
                 .define("saplingsOnly", false);
         sprintGrowChance = builder.comment("The chance of growth effect being applied from sprinting")
                 .defineInRange("sprintGrowChance", 0.15, 0, 1);
-
+        crouchGrowChance = builder.comment("The chance of growth effect being applied from any source")
+                .defineInRange("crouchGrowChance", 0.5, 0, 1);
     }
 }

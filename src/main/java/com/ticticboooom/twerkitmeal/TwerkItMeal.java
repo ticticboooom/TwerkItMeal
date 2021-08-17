@@ -86,7 +86,7 @@ public class TwerkItMeal {
             }
 
             ServerPlayerEntity player = (ServerPlayerEntity) event.player;
-            if (playerCrouchCount >= TwerkConfig.minCrouchesToApplyBonemeal && world.getRandom().nextDouble() <= 0.5) {
+            if (playerCrouchCount >= TwerkConfig.minCrouchesToApplyBonemeal && world.getRandom().nextDouble() <= TwerkConfig.crouchGrowChance) {
                 triggerGrowth(event, uuid);
             }
         }

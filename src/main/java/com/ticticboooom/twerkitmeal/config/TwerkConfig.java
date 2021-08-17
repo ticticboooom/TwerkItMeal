@@ -1,7 +1,6 @@
 package com.ticticboooom.twerkitmeal.config;
 
 import com.ticticboooom.twerkitmeal.TwerkItMeal;
-import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.fml.config.ModConfig;
 
 import java.util.List;
@@ -16,6 +15,7 @@ public class TwerkConfig {
     public static boolean saplingsOnly;
     public static int distanceSprintedToGrow;
     public static double sprintGrowChance;
+    public static double crouchGrowChance;
 
     public static void bake(ModConfig config) {
         showParticles = TwerkItMeal.COMMON_CONFIG.showParticles.get();
@@ -26,5 +26,6 @@ public class TwerkConfig {
         effectRadius = TwerkItMeal.COMMON_CONFIG.effectRadius.get();
         saplingsOnly = TwerkItMeal.COMMON_CONFIG.saplingsOnly.get();
         sprintGrowChance = TwerkItMeal.COMMON_CONFIG.sprintGrowChance.get();
+        crouchGrowChance = TwerkItMeal.COMMON_CONFIG.crouchGrowChance.get();
     }
 }
