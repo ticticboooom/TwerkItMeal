@@ -3,7 +3,11 @@ package com.ticticboooom.twerkitmeal;
 import com.ticticboooom.twerkitmeal.config.CommonConfig;
 import com.ticticboooom.twerkitmeal.config.TwerkConfig;
 import com.ticticboooom.twerkitmeal.helper.FilterListHelper;
+import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Registry;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
@@ -17,20 +21,16 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.BonemealableBlock;
 import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.api.ModLoadingContext;
+import net.minecraftforge.api.fml.event.config.ModConfigEvent;
 import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.ModLoadingContext;
-import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.*;
 
 
-@Mod(TwerkItMeal.MOD_ID)
-public class TwerkItMeal {
+public class TwerkItMeal implements ModInitializer {
     public static final String MOD_ID = "twerkitmeal";
 
     static final ForgeConfigSpec commonSpec;
@@ -42,63 +42,64 @@ public class TwerkItMeal {
         COMMON_CONFIG = specPair.getLeft();
     }
 
-    public TwerkItMeal() {
-        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, commonSpec, "twerk-config.toml");
-        MinecraftForge.EVENT_BUS.register(new RegistryEvents());
+    @Override
+    public void onInitialize() {
+        ModLoadingContext.registerConfig(MOD_ID, ModConfig.Type.COMMON, commonSpec, "twerk-config.toml");
+        ModConfigEvent.LOADING.register(TwerkConfig::bake);
+        ModConfigEvent.RELOADING.register(TwerkConfig::bake);
+        new RegistryEvents();
     }
 
 
-    @Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD)
     public static class RegistryEvents {
 
         private final Map<UUID, Integer> crouchCount = new HashMap<>();
         private final Map<UUID, Boolean> prevSneaking = new HashMap<>();
         private final Map<UUID, Integer> playerDistance = new HashMap<>();
 
-        @SubscribeEvent
-        public void onTwerk(TickEvent.PlayerTickEvent event) {
-            if (event.player.level.isClientSide) {
-                return;
-            }
-            UUID uuid = event.player.getUUID();
+        public RegistryEvents() {
+            ServerTickEvents.START_WORLD_TICK.register(world -> PlayerLookup.world(world).forEach(this::onTwerk));
+        }
+
+        public void onTwerk(ServerPlayer player) {
+            UUID uuid = player.getUUID();
             if (!crouchCount.containsKey(uuid)){
                 crouchCount.put(uuid, 0);
-                prevSneaking.put(uuid, event.player.isCrouching());
+                prevSneaking.put(uuid, player.isCrouching());
                 playerDistance.put(uuid, 0);
             }
 
-            ServerLevel world = (ServerLevel) event.player.level;
+            ServerLevel world = (ServerLevel) player.level;
 
-            if (event.player.isSprinting() && world.getRandom().nextDouble() <= TwerkConfig.sprintGrowChance){
-                triggerGrowth(event, uuid);
+            if (player.isSprinting() && world.getRandom().nextDouble() <= TwerkConfig.sprintGrowChance){
+                triggerGrowth(player, uuid);
             }
 
             boolean wasPlayerSneaking = prevSneaking.get(uuid);
             int playerCrouchCount = crouchCount.get(uuid);
-            if (!event.player.isCrouching()) {
+            if (!player.isCrouching()) {
                 prevSneaking.put(uuid, false);
                 return;
             }
-            if (wasPlayerSneaking && event.player.isCrouching()) {
+            if (wasPlayerSneaking && player.isCrouching()) {
                 return;
-            } else if (!wasPlayerSneaking && event.player.isCrouching()) {
+            } else if (!wasPlayerSneaking && player.isCrouching()) {
                 prevSneaking.put(uuid, true);
                 crouchCount.put(uuid, ++playerCrouchCount);
             }
 
-            ServerPlayer player = (ServerPlayer) event.player;
             if (playerCrouchCount >= TwerkConfig.minCrouchesToApplyBonemeal && world.random.nextDouble() <= TwerkConfig.crouchGrowChance) {
-                triggerGrowth(event, uuid);
+                triggerGrowth(player, uuid);
             }
         }
 
-        private void triggerGrowth(TickEvent.PlayerTickEvent event, UUID uuid) {
+        private void triggerGrowth(ServerPlayer player, UUID uuid) {
             crouchCount.put(uuid, 0);
-            List<BlockPos> growables = getNearestBlocks(event.player.level, event.player.blockPosition());
+            List<BlockPos> growables = getNearestBlocks(player.level, player.blockPosition());
             Set<BlockPos> grownDT = new HashSet<>();
             for (BlockPos growablePos : growables) {
-                BlockState blockState = event.player.level.getBlockState(growablePos);
-                if (!FilterListHelper.shouldAllow(blockState.getBlock().getRegistryName().toString())) {
+                BlockState blockState = player.level.getBlockState(growablePos);
+                if (!FilterListHelper.shouldAllow(Registry.BLOCK.getKey(blockState.getBlock()).toString())) {
                     continue;
                 }
 
@@ -109,11 +110,11 @@ public class TwerkItMeal {
                 }
                 if (blockState.hasProperty(CropBlock.AGE)) {
                     int growth = blockState.getValue(CropBlock.AGE);
-                    event.player.level.setBlockAndUpdate(growablePos, blockState.setValue(CropBlock.AGE, growth < 7 ? growth + 1 : 7));
+                    player.level.setBlockAndUpdate(growablePos, blockState.setValue(CropBlock.AGE, growth < 7 ? growth + 1 : 7));
                 } else if (blockState.getBlock() instanceof BonemealableBlock) {
-                    BoneMealItem.applyBonemeal(new ItemStack(Items.BONE_MEAL), event.player.level, growablePos, event.player);
+                    BoneMealItem.growCrop(new ItemStack(Items.BONE_MEAL), player.level, growablePos);
                 }
-                ((ServerLevel)event.player.level).sendParticles((ServerPlayer) event.player, ParticleTypes.HAPPY_VILLAGER, false, growablePos.getX() + event.player.level.random.nextDouble(), growablePos.getY() + event.player.level.random.nextDouble(), growablePos.getZ() + event.player.level.random.nextDouble(), 10, 0, 0, 0, 3);
+                ((ServerLevel)player.level).sendParticles(player, ParticleTypes.HAPPY_VILLAGER, false, growablePos.getX() + player.level.random.nextDouble(), growablePos.getY() + player.level.random.nextDouble(), growablePos.getZ() + player.level.random.nextDouble(), 10, 0, 0, 0, 3);
             }
         }
 
@@ -124,7 +125,7 @@ public class TwerkItMeal {
                     for (int z = -TwerkConfig.effectRadius; z <= TwerkConfig.effectRadius; z++) {
                         Block block = level.getBlockState(new BlockPos(x + pos.getX(), y + pos.getY(), z + pos.getZ())).getBlock();
                         if (block instanceof BonemealableBlock) {
-                            if (FilterListHelper.shouldAllow(block.getRegistryName().toString())) {
+                            if (FilterListHelper.shouldAllow(Registry.BLOCK.getKey(block).toString())) {
                                 list.add(new BlockPos(x + pos.getX(), y + pos.getY(), z + pos.getZ()));
                             }
                         }

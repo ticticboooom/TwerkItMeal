@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "twerkitmeal",
+  "version": "${version}",
+
+  "name": "TwerkItMeal",
+  "description": "This is an example description! Tell everyone what your mod is about!",
+  "authors": [
+    "TicTicBoom (Kyle)",
+    "AlphaMode"
+  ],
+
+  "license": "MIT",
+
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.ticticboooom.twerkitmeal.TwerkItMeal"
+    ]
+  },
+
+  "depends": {
+    "fabricloader": ">=0.12.12",
+    "fabric": "*",
+    "java": ">=17"
+  }
+}
