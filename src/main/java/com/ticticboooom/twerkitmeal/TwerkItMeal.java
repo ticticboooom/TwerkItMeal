@@ -104,7 +104,7 @@ public class TwerkItMeal implements ModInitializer {
                 }
 
                 if (TwerkConfig.saplingsOnly){
-                    if (!BlockTags.SAPLINGS.contains(blockState.getBlock())) {
+                    if (!blockState.getBlock().builtInRegistryHolder().is(BlockTags.SAPLINGS)) {
                         continue;
                     }
                 }
