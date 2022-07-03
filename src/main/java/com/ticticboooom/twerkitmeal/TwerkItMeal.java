@@ -53,6 +53,7 @@ public class TwerkItMeal {
         private final Map<UUID, Integer> crouchCount = new HashMap<>();
         private final Map<UUID, Boolean> prevSneaking = new HashMap<>();
         private final Map<UUID, Integer> playerDistance = new HashMap<>();
+        private final Map<UUID, Integer> playerHoldTimer = new HashMap<>();
 
         @SubscribeEvent
         public void onTwerk(TickEvent.PlayerTickEvent event) {
@@ -69,6 +70,10 @@ public class TwerkItMeal {
             ServerWorld world = (ServerWorld) event.player.world;
 
             if (event.player.isSprinting() && world.getRandom().nextDouble() <= TwerkConfig.sprintGrowChance){
+                triggerGrowth(event, uuid);
+            }
+
+            if (event.player.isSneaking()){
                 triggerGrowth(event, uuid);
             }
 
