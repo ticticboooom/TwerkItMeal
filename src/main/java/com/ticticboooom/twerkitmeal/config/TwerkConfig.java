@@ -16,6 +16,7 @@ public class TwerkConfig {
     public static int distanceSprintedToGrow;
     public static double sprintGrowChance;
     public static double crouchGrowChance;
+    public static boolean growBabies;
 
     public static void bake(ModConfig config) {
         showParticles = TwerkItMeal.COMMON_CONFIG.showParticles.get();
@@ -27,5 +28,6 @@ public class TwerkConfig {
         saplingsOnly = TwerkItMeal.COMMON_CONFIG.saplingsOnly.get();
         sprintGrowChance = TwerkItMeal.COMMON_CONFIG.sprintGrowChance.get();
         crouchGrowChance = TwerkItMeal.COMMON_CONFIG.crouchGrowChance.get();
+        growBabies = TwerkItMeal.COMMON_CONFIG.growBabies.get();
     }
 }

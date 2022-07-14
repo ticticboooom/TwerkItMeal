@@ -33,7 +33,7 @@ apply plugin: 'net.minecraftforge.gradle'
 apply plugin: 'eclipse'
 apply plugin: 'maven-publish'
 
-version = '1.3.9'
+version = '1.4.1'
 group = 'com.ticticbooom.twerkitmeal' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = 'TwerkItMeal'
 
