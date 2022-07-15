@@ -15,6 +15,7 @@ public class CommonConfig {
     public final ForgeConfigSpec.BooleanValue saplingsOnly;
     public final ForgeConfigSpec.DoubleValue sprintGrowChance;
     public final ForgeConfigSpec.DoubleValue crouchGrowChance;
+    public final ForgeConfigSpec.BooleanValue growBabies;
 
     public CommonConfig(ForgeConfigSpec.Builder builder) {
         List<String> defaultBlackList = new ArrayList<>();
@@ -44,5 +45,7 @@ public class CommonConfig {
                 .defineInRange("sprintGrowChance", 0.15, 0, 1);
         crouchGrowChance = builder.comment("The chance of growth effect being applied from any source")
                 .defineInRange("crouchGrowChance", 0.5, 0, 1);
+        growBabies = builder.comment("Whether to grow up baby animals, villagers and other ageable mobs or not when twerking")
+                .define("growBabies", true);
     }
 }

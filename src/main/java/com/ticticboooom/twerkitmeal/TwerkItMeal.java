@@ -5,6 +5,8 @@ import com.ticticboooom.twerkitmeal.config.TwerkConfig;
 import com.ticticboooom.twerkitmeal.dynamictrees.DTProxy;
 import com.ticticboooom.twerkitmeal.helper.FilterListHelper;
 import net.minecraft.block.*;
+import net.minecraft.entity.AgeableEntity;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.BoneMealItem;
@@ -13,6 +15,7 @@ import net.minecraft.item.Items;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.particles.ParticleTypes;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
@@ -25,6 +28,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import org.apache.commons.lang3.tuple.Pair;
 
+import javax.annotation.Nullable;
 import java.util.*;
 
 
@@ -53,6 +57,7 @@ public class TwerkItMeal {
         private final Map<UUID, Integer> crouchCount = new HashMap<>();
         private final Map<UUID, Boolean> prevSneaking = new HashMap<>();
         private final Map<UUID, Integer> playerDistance = new HashMap<>();
+        private final Map<UUID, Integer> playerHoldTimer = new HashMap<>();
 
         @SubscribeEvent
         public void onTwerk(TickEvent.PlayerTickEvent event) {
@@ -69,6 +74,10 @@ public class TwerkItMeal {
             ServerWorld world = (ServerWorld) event.player.world;
 
             if (event.player.isSprinting() && world.getRandom().nextDouble() <= TwerkConfig.sprintGrowChance){
+                triggerGrowth(event, uuid);
+            }
+
+            if (event.player.isSneaking()){
                 triggerGrowth(event, uuid);
             }
 
@@ -95,6 +104,7 @@ public class TwerkItMeal {
             crouchCount.put(uuid, 0);
             List<BlockPos> growables = getNearestBlocks(event.player.world, event.player.getPosition());
             Set<BlockPos> grownDT = new HashSet<>();
+
             for (BlockPos growablePos : growables) {
                 BlockState blockState = event.player.world.getBlockState(growablePos);
                 if (!FilterListHelper.shouldAllow(blockState.getBlock().getRegistryName().toString())) {
@@ -114,14 +124,25 @@ public class TwerkItMeal {
                 } else if (DTProxy.getProxy().blockAllowed(blockState.getBlock())) {
                     DTProxy.getProxy().grow(event.player.world, growablePos, grownDT);
                 }
-                ((ServerWorld)event.player.world).spawnParticle((ServerPlayerEntity) event.player, ParticleTypes.HAPPY_VILLAGER, false, growablePos.getX() + event.player.world.rand.nextDouble(), growablePos.getY() + event.player.world.rand.nextDouble(), growablePos.getZ() + event.player.world.rand.nextDouble(), 10, 0, 0, 0, 3);
+                SpawnParticles(event.player, growablePos);
+            }
+
+            if (!TwerkConfig.growBabies) return;
+
+            List<AgeableEntity> entities = getNearestAgeableEntities(event.player.world, event.player.getPosition());
+
+            for (AgeableEntity entity:
+                    entities) {
+                entity.addGrowth(8000 / 20);
+
+                SpawnParticles(event.player, entity.getPosition());
             }
         }
 
         private List<BlockPos> getNearestBlocks(World world, BlockPos pos) {
             List<BlockPos> list = new ArrayList<>();
             for (int x = -TwerkConfig.effectRadius; x <= TwerkConfig.effectRadius; x++)
-                for (int y = -2; y <= 2; y++)
+                for (int y = -TwerkConfig.effectRadius; y <= TwerkConfig.effectRadius; y++)
                     for (int z = -TwerkConfig.effectRadius; z <= TwerkConfig.effectRadius; z++) {
                         Block block = world.getBlockState(new BlockPos(x + pos.getX(), y + pos.getY(), z + pos.getZ())).getBlock();
                         if (block instanceof IGrowable || DTProxy.getProxy().blockAllowed(block)) {
@@ -131,6 +152,46 @@ public class TwerkItMeal {
                         }
                     }
             return list;
+        }
+
+        private List<AgeableEntity> getNearestAgeableEntities(World world, BlockPos pos) {
+            List<AgeableEntity> list = new ArrayList<>();
+
+            for (int x = -TwerkConfig.effectRadius; x <= TwerkConfig.effectRadius; x++)
+                for (int y = -2; y <= 2; y++)
+                    for (int z = -TwerkConfig.effectRadius; z <= TwerkConfig.effectRadius; z++) {
+                        List<AgeableEntity> posEntitiesList =
+                                world.getEntitiesWithinAABB(
+                                        AgeableEntity.class,
+                                        new AxisAlignedBB(
+                                                new BlockPos(
+                                                        x + pos.getX(),
+                                                        y + pos.getY(),
+                                                        z + pos.getZ()
+                                                )
+                                        )
+                                );
+                        for (AgeableEntity entity :
+                             posEntitiesList) {
+                            if (entity.getGrowingAge() < 0) {
+                                list.add(entity);
+                            }
+                        }
+                    }
+
+            return list;
+        }
+
+        private void SpawnParticles(PlayerEntity player, BlockPos pos){
+            ((ServerWorld)player.world).spawnParticle(
+                    (ServerPlayerEntity) player,
+                    ParticleTypes.HAPPY_VILLAGER,
+                    false,
+                    pos.getX() + player.world.rand.nextDouble(),
+                    pos.getY() + player.world.rand.nextDouble(),
+                    pos.getZ() + player.world.rand.nextDouble(),
+                    10, 0, 0, 0, 3
+            );
         }
 
         private CompoundNBT createCompoundTag(BlockPos pos) {
